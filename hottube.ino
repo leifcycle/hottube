@@ -1,6 +1,6 @@
 #include <EtherCard.h>
 #include "button.h"
-static byte myip[] = { 192,168,1,95 };
+static byte myip[] = { 192,168,1,75 };
 static byte gwip[] = { 192,168,1,1 };
 static byte mymac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x31 };
 
