@@ -1,4 +1,12 @@
-#include <EtherCard.h>
+#include <Dhcp.h>
+#include <Dns.h>
+#include <Ethernet.h>
+#include <EthernetClient.h>
+#include <EthernetServer.h>
+#include <EthernetUdp.h>
+#include <util.h>
+
+// #include <EtherCard.h>
 #include "button.h"
 static byte myip[] = { 192,168,1,75 };
 static byte gwip[] = { 192,168,1,1 };
