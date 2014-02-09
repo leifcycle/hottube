@@ -10,4 +10,5 @@ reading temperature using a Waterproof DS18B20 Digital temperature sensor
 
 http://www.adafruit.com/products/381
 
-(using DallasTemperature.h)
+example program for DS18B20 (works perfectly with no changes):
+http://bildr.org/2011/07/ds18b20-arduino/
