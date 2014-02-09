@@ -1,6 +1,6 @@
 Web-enabled Arduino Hot Tub controller / monitor / internet bridge
 
-Using X-Board (SKU:DFR0133) with Ethernet:WIZ5100 and Arduino FIO Bootloader
+Using X-Board (SKU:DFR0133) with Ethernet:WIZ5100 and Arduino UNO Bootloader
 
 http://www.dfrobot.com/wiki/index.php?title=X-Board_%28SKU:DFR0133%29
 
