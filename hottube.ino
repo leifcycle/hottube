@@ -3,7 +3,7 @@
 
 #include "button.h"
 IPAddress ip(192,168,1,75);
-static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x31 };
+static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
