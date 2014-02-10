@@ -46,6 +46,13 @@ void setup() {
   Serial.print("server is at ");
   Serial.println(Ethernet.localIP());
   bidx = 0;
+
+  if (initTemp()) {
+    Serial.print("DS18B20 temp sensor found, degrees C = ");
+    Serial.println(getTemp());
+    Serial.println(getTemp()); // have to do this twice here or it won't work later
+  }
+  else Serial.println("ERROR: DS18B20 temp sensor NOT found!!!");
 }
 
 void pulse(int pin) {
@@ -100,9 +107,11 @@ void sendResponse(EthernetClient* client) {
   client->println();
   // print the current readings, in HTML format:
   client->print("Temperature: ");
-  //client->print(temperature);
-  client->print(" degrees C");
-  client->println("<br />");
+  float celsius = getTemp(); // query the DS18B20 temp sensor
+  client->print(celsius);
+  client->print(" degrees C or ");
+  client->print(celsiusToFarenheit(celsius));
+  client->println(" degrees F<br />");
 }
 
 void listenForEthernetClients() {
