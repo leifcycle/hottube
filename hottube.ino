@@ -10,14 +10,20 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(80);
 
+#define METER_PIN 9 // analog meter connected to this pin
+#define METER_TIME 5000 // how long to wait before updating meter in loop()
+
 char buffer[1024];
 int bidx;
 
 unsigned long orbit_timeout = 0;
 unsigned long sf_timeout = 0;
+unsigned long updateMeter = 0;
 unsigned long time = 0;
 
 void setup() {
+  pinMode(METER_PIN, OUTPUT); // enable the analog temperature meter
+  analogWrite(METER_PIN, 20);  // move the needle to about -1 degree C
   Serial.begin(57600);
   Serial.println("\n[backSoon]");
 
@@ -31,10 +37,19 @@ void setup() {
     Serial.print("DS18B20 temp sensor found, degrees C = ");
     Serial.println(getTemp());
     Serial.println(getTemp()); // have to do this twice here or it won't work later
+    setMeter(getTemp());
   }
   else Serial.println("ERROR: DS18B20 temp sensor NOT found!!!");
 }
 
+void setMeter(float celsius) { // set analog temperature meter
+  // PWM of 24 = 0 celsius
+  //  114 = 20 C
+  //  210 = 40 C
+  //  from 20 to 40 degrees = 96 PWM so 4.8 PWM per degree
+  //  PWM = (celsius * 4.8) + 18 works great above 2 celsius
+  int pwm = constrain((int)(celsius * 4.8) + 18, 0, 255);
+  analogWrite(METER_PIN,pwm);
 }
 
 void sendResponse(EthernetClient* client) {
@@ -100,6 +115,11 @@ void listenForEthernetClients() {
 
 void loop() {
   time = millis();
+  if (time - updateMeter >= METER_TIME ) {
+    float celsius = getTemp();
+    setMeter(celsius); // set the temperature meter
+    Serial.println(celsius);
+    updateMeter = time;
   }
   listenForEthernetClients();
 }
