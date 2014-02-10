@@ -1,8 +1,8 @@
 Web-enabled Arduino Hot Tub controller / monitor / internet bridge
 
-Using X-Board (SKU:DFR0133) with Ethernet:WIZ5100 and Arduino UNO Bootloader
+Using X-Board V2.0 (SKU:DFR0162) with Ethernet:WIZ5100 and Arduino UNO Bootloader
 
-http://www.dfrobot.com/wiki/index.php?title=X-Board_%28SKU:DFR0133%29
+http://www.dfrobot.com/wiki/index.php/X-Board_V2_(SKU:DFR0162)
 
 controlling a 3800 watt electric heater through a solid-state relay, and an electric water pump through a different solid state relay (can't share, one's 240v the other is 120v)
 
@@ -12,3 +12,5 @@ http://www.adafruit.com/products/381
 
 example program for DS18B20 (works perfectly with no changes):
 http://bildr.org/2011/07/ds18b20-arduino/
+
+output temperature to an analog temperature gauge (from the exploratorium) using PWM on pin D9
