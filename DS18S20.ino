@@ -43,6 +43,8 @@ float getTemp(){
   ds.select(DS18S20addr);
   ds.write(0x44,1); // start conversion, with parasite power on at the end
 
+  delay(850); // wait for the conversion or else you get old data
+
   byte present = ds.reset();
   ds.select(DS18S20addr);
   ds.write(0xBE); // Read Scratchpad
@@ -51,15 +53,8 @@ float getTemp(){
   for (int i = 0; i < 9; i++) { // we need 9 bytes
     DS18S20data[i] = ds.read();
   }
+ 
+  float celsius = ( (DS18S20data[1] << 8) + DS18S20data[0] )*0.0625;
   
-  // ds.reset_search(); // does this need to be here?
-  
-  byte MSB = DS18S20data[1];
-  byte LSB = DS18S20data[0];
-
-  float tempRead = ((MSB << 8) | LSB); //using two's compliment
-  float TemperatureSum = tempRead / 16;
-  
-  return TemperatureSum; // celsius degrees
-  
+  return celsius;
 }
