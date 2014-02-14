@@ -1,6 +1,8 @@
 #include <SPI.h>
 #include <Ethernet.h>
+#include <OneWire.h>
 
+#include "DS18S20.h"
 #include "button.h"
 IPAddress ip(192,168,1,75);
 static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
@@ -16,10 +18,20 @@ EthernetServer server(80);
 char buffer[1024];
 int bidx;
 
-unsigned long orbit_timeout = 0;
+unsigned long set_celsius = 0;
 unsigned long sf_timeout = 0;
 unsigned long updateMeter = 0;
 unsigned long time = 0;
+
+void setMeter(float celsius) { // set analog temperature meter
+  // PWM of 24 = 0 celsius
+  //  114 = 20 C
+  //  210 = 40 C
+  //  from 20 to 40 degrees = 96 PWM so 4.8 PWM per degree
+  //  PWM = (celsius * 4.8) + 18 works great above 2 celsius
+  int pwm = constrain((int)(celsius * 4.8) + 18, 0, 255);
+  analogWrite(METER_PIN,pwm);
+}
 
 void setup() {
   pinMode(METER_PIN, OUTPUT); // enable the analog temperature meter
@@ -42,19 +54,9 @@ void setup() {
   else Serial.println("ERROR: DS18B20 temp sensor NOT found!!!");
 }
 
-void setMeter(float celsius) { // set analog temperature meter
-  // PWM of 24 = 0 celsius
-  //  114 = 20 C
-  //  210 = 40 C
-  //  from 20 to 40 degrees = 96 PWM so 4.8 PWM per degree
-  //  PWM = (celsius * 4.8) + 18 works great above 2 celsius
-  int pwm = constrain((int)(celsius * 4.8) + 18, 0, 255);
-  analogWrite(METER_PIN,pwm);
-}
-
 void sendResponse(EthernetClient* client) {
-  if (strncmp("GET /orbit/on", (char*)buffer, 13) == 0) {
-    orbit_timeout = time + (unsigned long)atoi(buffer+14) * 60000;
+  if (strncmp("GET /sc/", (char*)buffer, 8) == 0) {
+    set_celsius = (unsigned long)atoi(buffer+9);
   }
   else if (strncmp("GET /orbit/off", (char*)buffer, 14) == 0) {
   }
@@ -73,6 +75,11 @@ void sendResponse(EthernetClient* client) {
   client->print(celsius);
   client->print(" degrees C or ");
   client->print(celsiusToFarenheit(celsius));
+  client->println(" degrees F<br />");
+  client->print("Set point: ");
+  client->print(set_celsius);
+  client->print(" degrees C or ");
+  client->print(celsiusToFarenheit(set_celsius));
   client->println(" degrees F<br />");
 }
 

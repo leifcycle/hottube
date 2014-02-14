@@ -1,5 +1,3 @@
-#include <OneWire.h> 
-
 #define DS18S20_Pin 2 //DS18S20 Signal pin on digital 2
 
 OneWire ds(DS18S20_Pin);  // on digital pin 2
