@@ -19,7 +19,6 @@ char buffer[1024];
 int bidx;
 
 unsigned long set_celsius = 0;
-unsigned long sf_timeout = 0;
 unsigned long updateMeter = 0;
 unsigned long time = 0;
 
@@ -58,13 +57,13 @@ void sendResponse(EthernetClient* client) {
   if (strncmp("GET /sc/", (char*)buffer, 8) == 0) {
     set_celsius = (unsigned long)atoi(buffer+9);
   }
-  else if (strncmp("GET /orbit/off", (char*)buffer, 14) == 0) {
+  else if (strncmp("GET /j/off", (char*)buffer, 10) == 0) {
+    // deactivate jets
   }
-  else if (strncmp("GET /sf/on", (char*)buffer, 10) == 0) {
-    sf_timeout = time + (unsigned long)atoi(buffer+11) * 60000;
+  else if (strncmp("GET /j/on", (char*)buffer, 9) == 0) {
+    // activate jets
   }
-  else if (strncmp("GET /sf/off", (char*)buffer, 11) == 0) {
-  }
+
   client->println("HTTP/1.1 200 OK");
   client->println("Content-Type: text/html");
   client->println("Pragma: no-cache");
