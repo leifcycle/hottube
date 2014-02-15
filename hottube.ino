@@ -77,6 +77,10 @@ void sendResponse(EthernetClient* client) {
   client->println("Pragma: no-cache");
   client->println();
   // print the current readings, in HTML format:
+  if (digitalRead(HEATER_PIN)) {
+    client->println("Heater is on!");
+    client->println();
+  }
   client->print("Temperature: ");
   float celsius = getTemp(); // query the DS18B20 temp sensor
   client->print(celsius);
