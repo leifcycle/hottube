@@ -21,7 +21,7 @@ EthernetServer server(SERVER_PORT);
 char buffer[1024];
 int bidx;
 
-float set_celsius = 40.5; // 40.5C = 105F
+float set_celsius = 40.55555555; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
 unsigned long updateMeter = 0;
 unsigned long time = 0;
@@ -61,6 +61,9 @@ void setup() {
 void sendResponse(EthernetClient* client) {
   if (strncmp("GET /sc/", (char*)buffer, 8) == 0) {
     set_celsius = (unsigned long)atoi(buffer+8);
+  }
+  else if (strncmp("GET /sf/", (char*)buffer, 8) == 0) {
+    set_celsius = farenheitToCelsius((unsigned long)atoi(buffer+8));
   }
   else if (strncmp("GET /j/off", (char*)buffer, 10) == 0) {
     // deactivate jets
