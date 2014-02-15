@@ -59,7 +59,7 @@ void setup() {
 
 void sendResponse(EthernetClient* client) {
   if (strncmp("GET /sc/", (char*)buffer, 8) == 0) {
-    set_celsius = (unsigned long)atoi(buffer+9);
+    set_celsius = (unsigned long)atoi(buffer+8);
   }
   else if (strncmp("GET /j/off", (char*)buffer, 10) == 0) {
     // deactivate jets
