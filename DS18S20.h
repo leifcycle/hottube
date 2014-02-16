@@ -15,8 +15,8 @@ float farenheitToCelsius(float farenheit) {
 
 boolean initTemp() {
   if ( !ds.search(DS18S20addr)) {
-      //no more sensors on chain, reset search
-      ds.reset_search();
+      Serial.println("DS18S20 sensor not found!");
+      ds.reset_search(); //no more sensors on chain, reset search
       return false;
   }
 
@@ -53,7 +53,7 @@ float getTemp(){
   }
  
   float celsius = ( (DS18S20data[1] << 8) + DS18S20data[0] )*0.0625;
-  if (celsius == 0) {
+  if (celsius < 2) {
     celsius = 212; // assume it's too hot if sensor isn't working
     initTemp(); // try to find the sensor again
   }
