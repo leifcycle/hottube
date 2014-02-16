@@ -15,6 +15,9 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(SERVER_PORT);
 
+#define HEATER_PUMP_PIN 4 // to turn on heater circulator pump
+#define PUMPSTAYON 60000 // how long to run pump after heater is turned off
+
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
 
@@ -23,7 +26,7 @@ int bidx;
 
 float set_celsius = 40.55555555; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
-unsigned long updateMeter = 0;
+unsigned long updateMeter, pumpTime = 0;
 unsigned long time = 0;
 #include "beerctl.h" // controls the heater, must come after time
 
@@ -142,10 +145,11 @@ void loop() {
     updateMeter = time;
     if (celsius < set_celsius) {
       beerctl_temp = celsiusToFarenheit(set_celsius);
-      // turn on pump 
+      digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
     } else {
+      if (beerctl_temp != 0) pumpTime = time; // if heater WAS on, we will wait a minute
       beerctl_temp = 0;
-      // turn off pump if a minute has elapsed since beerctl_temp changed to 0
+      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
     }
   }
   beerctl_loop(beerctl_temp); // whatever that temp may be
