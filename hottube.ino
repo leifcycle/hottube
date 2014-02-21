@@ -17,7 +17,7 @@ EthernetServer server(SERVER_PORT);
 
 #define HEATER_PUMP_PIN 4 // to turn on heater circulator pump
 #define PUMPSTAYON 60000 // how long to run pump after heater is turned off
-
+#define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
 
@@ -143,12 +143,14 @@ void loop() {
     Serial.println(celsiusToFarenheit(celsius));
 #endif
     updateMeter = time;
-    if (celsius < set_celsius) {
+    if (celsius + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
       beerctl_temp = celsiusToFarenheit(set_celsius);
       digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
-    } else {
+    } else if (celsius > set_celsius) { // if we reach our goal, turn off heater
       if (beerctl_temp != 0) pumpTime = time; // if heater WAS on, we will wait a minute
       beerctl_temp = 0;
+      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
+    } else if (beerctl_temp == 0) {
       if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
     }
   }
