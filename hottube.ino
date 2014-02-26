@@ -15,7 +15,7 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(SERVER_PORT);
 
-#define HEATER_PUMP_PIN 4 // to turn on heater circulator pump
+#define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
 #define PUMPSTAYON 60000 // how long to run pump after heater is turned off
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
@@ -42,6 +42,7 @@ void setMeter(float celsius) { // set analog temperature meter
 
 void setup() {
   pinMode(METER_PIN, OUTPUT); // enable the analog temperature meter
+  pinMode(HEATER_PUMP_PIN, OUTPUT);
   analogWrite(METER_PIN, 20);  // move the needle to about -1 degree C
   Serial.begin(57600);
   Serial.println("\n[backSoon]");
