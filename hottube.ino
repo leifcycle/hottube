@@ -15,18 +15,22 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(SERVER_PORT);
 
+#define JETS_PUMP_PIN 8 // to turn on jet blaster pump
 #define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
 #define PUMPSTAYON 60000 // how long to run pump after heater is turned off
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
+#define JETS_TIME_MAX 240 // maximum jets time in minutes
+#define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
+#define JETS_REQUEST_TIME 5 // minutes of jets requested
 
 char buffer[1024];
 int bidx;
 
 float set_celsius = 40.55555555; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
-unsigned long updateMeter, pumpTime = 0;
+unsigned long updateMeter, pumpTime, jetsOffTime = 0;
 unsigned long time = 0;
 #include "beerctl.h" // controls the heater, must come after time
 
@@ -42,6 +46,7 @@ void setMeter(float celsius) { // set analog temperature meter
 
 void setup() {
   pinMode(METER_PIN, OUTPUT); // enable the analog temperature meter
+  pinMode(JETS_PUMP_PIN, OUTPUT);
   pinMode(HEATER_PUMP_PIN, OUTPUT);
   analogWrite(METER_PIN, 20);  // move the needle to about -1 degree C
   Serial.begin(57600);
@@ -70,10 +75,15 @@ void sendResponse(EthernetClient* client) {
     set_celsius = farenheitToCelsius(atof(buffer+8));
   }
   else if (strncmp("GET /j/off", (char*)buffer, 10) == 0) {
-    // deactivate jets
+    digitalWrite(JETS_PUMP_PIN,LOW); // deactivate jets (even though jetsOffTime will cause that)
+    jetsOffTime = time; // it's turnoff time
   }
-  else if (strncmp("GET /j/on", (char*)buffer, 9) == 0) {
-    // activate jets
+  else if (strncmp("GET /j/on/", (char*)buffer, 10) == 0) {
+    int jetMinutes = atoi(buffer+10); // activate jets for x minutes
+    if ((jetMinutes > 0) && (jetMinutes <= JETS_TIME_MAX)) {
+      digitalWrite(JETS_PUMP_PIN,HIGH); // turn on jets
+      jetsOffTime = time + (jetMinutes * 60000); // set turn-off time in minutes from now
+    }
   }
 
   client->println("HTTP/1.1 200 OK");
@@ -135,6 +145,30 @@ void listenForEthernetClients() {
   }
 }
 
+unsigned long jetRequestDebounce = 0; // last time jets request pin was high
+#define JETS_REQUEST_DEBOUNCE_TIME 100 // time in milliseconds to debounce pin
+#define JETS_REQUEST_CANCEL_TIME 1000 // time in milliseconds to cancel jets altogether
+
+void updateJets() {
+  if (time > jetsOffTime) digitalWrite(JETS_PUMP_PIN,LOW); // it's turn-off time!
+  if (digitalRead(JETS_REQUEST_PIN)) { // jets request button is not activated
+    jetRequestDebounce = time; // record last time we were high (unactivated)
+  } else if (time - jetRequestDebounce > JETS_REQUEST_DEBOUNCE_TIME) { // activated and it's not a bounce
+    if (time - jetRequestDebounce > JETS_REQUEST_CANCEL_TIME) { // holding button down cancels jets
+      jetsOffTime = time; // cancel jets
+      digitalWrite(JETS_PUMP_PIN,LOW); // turn OFF the jets
+    } else { // just trying to increment jet time
+      if (digitalRead(JETS_PUMP_PIN)) { // if pump is already on
+        jetsOffTime += JETS_REQUEST_TIME * 60000; // add the time increment
+        if (jetsOffTime - time > (JETS_TIME_MAX * 60000)) jetsOffTime = time + (JETS_TIME_MAX * 60000); // constrain
+      } else {
+        jetsOffTime = time + JETS_REQUEST_TIME * 60000; // set the time increment starting now
+        digitalWrite(JETS_PUMP_PIN,HIGH); // turn on the jets
+      }
+    }
+  }
+}
+
 void loop() {
   time = millis();
   if (time - updateMeter >= METER_TIME ) {
@@ -158,6 +192,7 @@ void loop() {
   beerctl_loop(beerctl_temp); // whatever that temp may be
 #ifndef DEBUG
   listenForEthernetClients();
+  updateJets();
 #endif
 }
 
