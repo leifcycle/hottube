@@ -146,8 +146,12 @@ void listenForEthernetClients() {
 }
 
 unsigned long jetRequestDebounce = 0; // last time jets request pin was high
-#define JETS_REQUEST_DEBOUNCE_TIME 100 // time in milliseconds to debounce pin
-#define JETS_REQUEST_CANCEL_TIME 1000 // time in milliseconds to cancel jets altogether
+#define JETS_REQUEST_DEBOUNCE_TIME 900 // time in milliseconds to debounce pin
+#define JETS_REQUEST_CANCEL_TIME 1500 // time in milliseconds to cancel jets altogether
+
+// this routine is seriously influenced by the main loop waiting 850ms for each
+// call to read the DS18S20 temperature sensor.  This will change when DS18S20.h
+// is modified to non-blocking behavior.
 
 void updateJets() {
   if (time > jetsOffTime) digitalWrite(JETS_PUMP_PIN,LOW); // it's turn-off time!
