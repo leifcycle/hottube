@@ -88,6 +88,7 @@ void sendResponse(EthernetClient* client) {
 
   client->println("HTTP/1.1 200 OK");
   client->println("Pragma: no-cache");
+  float celsius = getTemp(); // query the DS18B20 temp sensor
 
   if (strncmp("GET /help", (char*)buffer, 9) == 0) {
     client->println("Content-Type: text/plain\n");
@@ -99,6 +100,23 @@ void sendResponse(EthernetClient* client) {
  
     client->println("GET /j/{off|on}");
     client->println("  Turn the jets on or off.\n");
+ 
+    client->println("GET /sensors.json");
+    client->println("  All the sensor data as json\n");
+  }
+  else if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
+    client->println("Content-Type: application/json\n");
+    client->println("{");
+    client->print("  \"heat\":");
+    client->println(digitalRead(HEATER_PIN) ? "true," : "false,");
+    client->println("  \"temperature\":{");
+    client->print("    \"celsius\":");
+    client->print(celsius);
+    client->println(",");
+    client->print("    \"fahrenheit\":");
+    client->print(celsiusToFarenheit(celsius));
+    client->println("  }");
+    client->println("}");
   }
   else {
     client->println("Content-Type: text/html\n");
@@ -108,7 +126,6 @@ void sendResponse(EthernetClient* client) {
       client->println();
     }
     client->print("Temperature: ");
-    float celsius = getTemp(); // query the DS18B20 temp sensor
     client->print(celsius);
     client->print(" degrees C or ");
     client->print(celsiusToFarenheit(celsius));
