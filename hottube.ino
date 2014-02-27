@@ -87,25 +87,40 @@ void sendResponse(EthernetClient* client) {
   }
 
   client->println("HTTP/1.1 200 OK");
-  client->println("Content-Type: text/html");
   client->println("Pragma: no-cache");
-  client->println();
-  // print the current readings, in HTML format:
-  if (digitalRead(HEATER_PIN)) {
-    client->println("Heater is on!");
-    client->println();
+
+  if (strncmp("GET /help", (char*)buffer, 9) == 0) {
+    client->println("Content-Type: text/plain\n");
+    client->println("GET /sc/{DEGREES}");
+    client->println("  Set the temperature in degrees celsius.\n");
+ 
+    client->println("GET /sf/{DEGREES}");
+    client->println("  Set the temperature in degrees fahrenheit.\n");
+ 
+    client->println("GET /j/{off|on}");
+    client->println("  Turn the jets on or off.\n");
   }
-  client->print("Temperature: ");
-  float celsius = getTemp(); // query the DS18B20 temp sensor
-  client->print(celsius);
-  client->print(" degrees C or ");
-  client->print(celsiusToFarenheit(celsius));
-  client->println(" degrees F<br />");
-  client->print("Set point: ");
-  client->print(set_celsius);
-  client->print(" degrees C or ");
-  client->print(celsiusToFarenheit(set_celsius));
-  client->println(" degrees F<br />");
+  else {
+    client->println("Content-Type: text/html\n");
+    // print the current readings, in HTML format:
+    if (digitalRead(HEATER_PIN)) {
+      client->println("Heater is on!");
+      client->println();
+    }
+    client->print("Temperature: ");
+    float celsius = getTemp(); // query the DS18B20 temp sensor
+    client->print(celsius);
+    client->print(" degrees C or ");
+    client->print(celsiusToFarenheit(celsius));
+    client->println(" degrees F<br />");
+    client->print("Set point: ");
+    client->print(set_celsius);
+    client->print(" degrees C or ");
+    client->print(celsiusToFarenheit(set_celsius));
+    client->println(" degrees F<br />");
+ 
+    client->println("<br />GET /help.txt for API information<br />");
+  }
 }
 
 void listenForEthernetClients() {
