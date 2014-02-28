@@ -10,7 +10,7 @@ elif test -c /dev/ttyACM0; then
   PORT=/dev/ttyACM0
 fi
 
-ROOT=$(cd `dirname $0`; cd ..; pwd)
+ROOT=$(cd `dirname $0`; pwd)
 mkdir -p $ROOT/build
 rm -f $ROOT/build/*
 
@@ -22,7 +22,7 @@ CORE_SOURCES=`echo $ARDUINO_PATH/{main.cpp,wiring*.c,WInterrupts.c,\
 {WMath,WString,Print,HardwareSerial,IPAddress}.cpp}`
 
 avr-c++ -o $ROOT/build/main.elf -x c++ \
-  hottube.ino \
+  $ROOT/hottube.ino \
   <(echo 'extern "C" void __cxa_pure_virtual() { while(1); }') \
   $CORE_SOURCES \
   $PWD/vendor/OneWire/OneWire.cpp \
@@ -32,7 +32,6 @@ avr-c++ -o $ROOT/build/main.elf -x c++ \
   -I $PWD/vendor/OneWire \
   -I $ARDUINO_PATH -I $VARIANTS_PATH \
   `find $ARDUINO_ROOT/libraries -type d | sed 's/^/-I /'` \
-  -ffunction-sections -fdata-sections -w
-
-avr-objcopy -O ihex -R .eeprom $ROOT/build/main.elf $ROOT/build/main.hex
-avrdude -p$MCU -P$PORT -carduino -b115200 -U flash:w:$ROOT/build/main.hex:i
+  -ffunction-sections -fdata-sections -w \
+&& avr-objcopy -O ihex -R .eeprom $ROOT/build/main.elf $ROOT/build/main.hex \
+&& avrdude -p$MCU -P$PORT -carduino -b115200 -U flash:w:$ROOT/build/main.hex:i
