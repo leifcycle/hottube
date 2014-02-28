@@ -29,7 +29,7 @@ EthernetServer server(SERVER_PORT);
 char buffer[BUFFER_SIZE];
 int bidx = 0;
 
-float set_celsius = 40.55555555; // 40.5555555C = 105F
+float set_celsius = 20; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
 unsigned long updateMeter, pumpTime, jetsOffTime = 0;
 unsigned long time = 0;
