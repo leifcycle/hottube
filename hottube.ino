@@ -107,15 +107,20 @@ void sendResponse(EthernetClient* client) {
   else if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
     client->println("Content-Type: application/json\n");
     client->println("{");
-    client->print("  \"heat\":");
+    
+    client->print("  \"heat\": ");
     client->println(digitalRead(HEATER_PIN) ? "true," : "false,");
-    client->println("  \"temperature\":{");
-    client->print("    \"celsius\":");
+    
+    client->println("  \"temperature\": {");
+    client->print("    \"celsius\": ");
     client->print(celsius);
     client->println(",");
-    client->print("    \"fahrenheit\":");
+    client->print("    \"fahrenheit\": ");
     client->print(celsiusToFarenheit(celsius));
-    client->println("  }");
+    client->println("  },");
+    
+    client->print("    \"jets\": ");
+    client->print(jetsOffTime > time ? jetsOffTime - time : 0);
     client->println("}");
   }
   else {
