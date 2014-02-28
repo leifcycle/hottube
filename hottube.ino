@@ -25,8 +25,9 @@ EthernetServer server(SERVER_PORT);
 #define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
 #define JETS_REQUEST_TIME 5 // minutes of jets requested
 
-char buffer[512];
-int bidx;
+#define BUFFER_SIZE 512 // 1024 was too big, it turns out
+char buffer[BUFFER_SIZE];
+int bidx = 0;
 
 float set_celsius = 40.55555555; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
@@ -56,7 +57,6 @@ void setup() {
   server.begin();
   Serial.print("server is at ");
   Serial.println(Ethernet.localIP());
-  bidx = 0;
 #endif
   if (initTemp()) {
     Serial.print("DS18B20 temp sensor found, degrees C = ");
@@ -157,6 +157,7 @@ void listenForEthernetClients() {
       if (client.available()) {
         char c = client.read();
         buffer[bidx++] = c;
+        if (bidx == BUFFER_SIZE) bidx = BUFFER_SIZE - 1; // don't overflow the buffer!!!
 
         // if you've gotten to the end of the line (received a newline
         // character) and the line is blank, the http request has ended,
