@@ -25,7 +25,7 @@ EthernetServer server(SERVER_PORT);
 #define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
 #define JETS_REQUEST_TIME 5 // minutes of jets requested
 
-char buffer[1024];
+char buffer[512];
 int bidx;
 
 float set_celsius = 40.55555555; // 40.5555555C = 105F
@@ -98,8 +98,9 @@ void sendResponse(EthernetClient* client) {
     client->println("GET /sf/{DEGREES}");
     client->println("  Set the temperature in degrees fahrenheit.\n");
  
-    client->println("GET /j/{off|on}");
-    client->println("  Turn the jets on or off.\n");
+    client->println("GET /j/on/{MINUTES}");
+    client->println("GET /j/off");
+    client->println("  Turn the jets on for MINUTES or off.\n");
  
     client->println("GET /sensors.json");
     client->println("  All the sensor data as json\n");
@@ -117,11 +118,11 @@ void sendResponse(EthernetClient* client) {
     client->println(",");
     client->print("    \"fahrenheit\": ");
     client->print(celsiusToFarenheit(celsius));
-    client->println("  },");
+    client->println("\n  },");
     
     client->print("    \"jets\": ");
     client->print(jetsOffTime > time ? jetsOffTime - time : 0);
-    client->println("}");
+    client->println("\n}");
   }
   else {
     client->println("Content-Type: text/html\n");
