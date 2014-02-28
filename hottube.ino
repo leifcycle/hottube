@@ -141,7 +141,7 @@ void sendResponse(EthernetClient* client) {
     client->print(celsiusToFarenheit(set_celsius));
     client->println(" degrees F<br />");
  
-    client->println("<br />GET /help.txt for API information<br />");
+    client->println("<br />See <a href=\"/help.txt\">help.txt</a> for API information<br />");
   }
 }
 
