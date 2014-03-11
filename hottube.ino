@@ -112,6 +112,10 @@ void sendResponse(EthernetClient* client) {
     client->print("  \"heat\": ");
     client->println(digitalRead(HEATER_PIN) ? "true," : "false,");
     
+    client->print("  \"pump\": ");
+    client->print(time - pumpTime);
+    client->println(",");
+
     client->println("  \"temperature\": {");
     client->print("    \"celsius\": ");
     client->print(celsius);
@@ -120,6 +124,17 @@ void sendResponse(EthernetClient* client) {
     client->print(celsiusToFarenheit(celsius));
     client->println("\n  },");
     
+    client->println("  \"set_temp\": {");
+    client->print("    \"celsius\": ");
+    client->print(set_celsius);
+    client->println(",");
+    client->print("    \"fahrenheit\": ");
+    client->print(celsiusToFarenheit(set_celsius));
+    client->println(",");
+    client->print("    \"beerctl_temp\": ");
+    client->print(beerctl_temp);
+    client->println("\n  },");
+
     client->print("    \"jets\": ");
     client->print(jetsOffTime > time ? jetsOffTime - time : 0);
     client->println("\n}");
