@@ -67,16 +67,28 @@ void setup() {
   beerctl_init(); // init the heater and thermistors
 }
 
+void redirectClient(EthernetClient* client) {
+    client->println("HTTP/1.1 302");
+    client->println("Pragma: no-cache");
+    client->println("Location: /");
+}
+
 void sendResponse(EthernetClient* client) {
   if (strncmp("GET /sc/", (char*)buffer, 8) == 0) {
     set_celsius = atof(buffer+8);
+    redirectClient(client);
+    return;
   }
   else if (strncmp("GET /sf/", (char*)buffer, 8) == 0) {
     set_celsius = farenheitToCelsius(atof(buffer+8));
+    redirectClient(client);
+    return;
   }
   else if (strncmp("GET /j/off", (char*)buffer, 10) == 0) {
     digitalWrite(JETS_PUMP_PIN,LOW); // deactivate jets (even though jetsOffTime will cause that)
     jetsOffTime = time; // it's turnoff time
+    redirectClient(client);
+    return;
   }
   else if (strncmp("GET /j/on/", (char*)buffer, 10) == 0) {
     int jetMinutes = atoi(buffer+10); // activate jets for x minutes
@@ -84,6 +96,8 @@ void sendResponse(EthernetClient* client) {
       digitalWrite(JETS_PUMP_PIN,HIGH); // turn on jets
       jetsOffTime = time + (jetMinutes * 60000); // set turn-off time in minutes from now
     }
+    redirectClient(client);
+    return;
   }
 
   client->println("HTTP/1.1 200 OK");
