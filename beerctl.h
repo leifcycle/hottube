@@ -1,5 +1,6 @@
 // BEGIN beerctl stuff
 // threshold values in degrees F
+#define BEERCTL_MAX 110 // full heating
 #define RED_TARGET_1 102 // straight port
 #define BLUE_HOTTERN_RED 15 // how much hotter it is at the elbow port
 #define BLUE_TARGET_1 RED_TARGET_1 + BLUE_HOTTERN_RED // elbow port
@@ -21,7 +22,7 @@
 #define BLUEPIN A0
 #define HEATER_PIN 4
 
-#define DOWNTIME 10000 // minimum heater off time before turning on again
+#define DOWNTIME 1000 // minimum heater off time before turning on again
 #define PRINTTIME 1000 // how many milliseconds between print temperatures
 #define AVG_CYCLES 50 // how many times to take a reading at a time
 

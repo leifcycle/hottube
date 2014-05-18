@@ -17,21 +17,24 @@ EthernetServer server(SERVER_PORT);
 
 #define JETS_PUMP_PIN 8 // to turn on jet blaster pump
 #define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
-#define PUMPSTAYON 60000 // how long to run pump after heater is turned off
+#define PUMPSTAYON 30000 // how long to run pump after heater is turned off
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
 #define JETS_TIME_MAX 240 // maximum jets time in minutes
 #define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
 #define JETS_REQUEST_TIME 5 // minutes of jets requested
-
+#define TEMP_VALID_MIN 10 // minimum celsius reading from temp sensor considered valid
+#define TEMP_VALID_MAX 120 // maximum celsius reading from temp sensor considered valid
+#define MAXREADINGAGE 60000 // maximum time since last valid reading to continue to use it
 #define BUFFER_SIZE 512 // 1024 was too big, it turns out
 char buffer[BUFFER_SIZE];
 int bidx = 0;
 
 float set_celsius = 20; // 40.5555555C = 105F
 float beerctl_temp = 0; // what temp to set the heater to
-unsigned long updateMeter, pumpTime, jetsOffTime = 0;
+float celsiusReading = 0; // stores valid value read from temp sensor
+unsigned long updateMeter, pumpTime, jetsOffTime, lastTempReading = 0;
 unsigned long time = 0;
 #include "beerctl.h" // controls the heater, must come after time
 
@@ -244,16 +247,22 @@ void updateJets() {
 void loop() {
   time = millis();
   if (time - updateMeter >= METER_TIME ) {
-    float celsius = getTemp();
-    setMeter(celsius); // set the temperature meter
+    float lastCelsiusReading = celsiusReading;
+    celsiusReading = getTemp();
+    setMeter(celsiusReading); // set the temperature meter
+    if ((celsiusReading > TEMP_VALID_MIN) && (celsiusReading < TEMP_VALID_MAX)) {
+      lastTempReading = time; // temperature sensor reported a sane value
+    } else if (time - lastTempReading < MAXREADINGAGE) { // if the last reading isn't too old
+      celsiusReading = lastCelsiusReading; // just use the last valid value
+    }
 #ifdef DEBUG
-    Serial.println(celsiusToFarenheit(celsius));
+    Serial.println(celsiusToFarenheit(celsiusReading));
 #endif
     updateMeter = time;
-    if (celsius + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
-      beerctl_temp = celsiusToFarenheit(set_celsius);
+    if (celsiusReading + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
+      beerctl_temp = celsiusToFarenheit(BEERCTL_MAX);
       digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
-    } else if (celsius > set_celsius) { // if we reach our goal, turn off heater
+    } else if (celsiusReading > set_celsius) { // if we reach our goal, turn off heater
       if (beerctl_temp != 0) pumpTime = time; // if heater WAS on, we will wait a minute
       beerctl_temp = 0;
       if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
