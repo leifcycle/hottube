@@ -21,7 +21,7 @@ EthernetServer server(SERVER_PORT);
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
-#define JETS_TIME_MAX 240 // maximum jets time in minutes
+#define JETS_TIME_MAX 60 // maximum jets time in minutes
 #define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
 #define JETS_REQUEST_TIME 5 // minutes of jets requested
 #define TEMP_VALID_MIN 10 // minimum celsius reading from temp sensor considered valid
@@ -221,8 +221,9 @@ void listenForEthernetClients() {
 }
 
 unsigned long jetRequestDebounce = 0; // last time jets request pin was high
+unsigned long jetRequestAccepted = 0; // time when jet increase request was last done
 #define JETS_REQUEST_DEBOUNCE_TIME 900 // time in milliseconds to debounce pin
-#define JETS_REQUEST_CANCEL_TIME 1500 // time in milliseconds to cancel jets altogether
+#define JETS_REQUEST_CANCEL_TIME 2000 // time in milliseconds to cancel jets altogether
 
 // this routine is seriously influenced by the main loop waiting 850ms for each
 // call to read the DS18S20 temperature sensor.  This will change when DS18S20.h
@@ -236,14 +237,13 @@ void updateJets() {
     if (time - jetRequestDebounce > JETS_REQUEST_CANCEL_TIME) { // holding button down cancels jets
       jetsOffTime = time; // cancel jets
       digitalWrite(JETS_PUMP_PIN,LOW); // turn OFF the jets
-    } else { // just trying to increment jet time
-      if (digitalRead(JETS_PUMP_PIN)) { // if pump is already on
-        jetsOffTime += JETS_REQUEST_TIME * 60000; // add the time increment
-        if (jetsOffTime - time > (JETS_TIME_MAX * 60000)) jetsOffTime = time + (JETS_TIME_MAX * 60000); // constrain
-      } else {
-        jetsOffTime = time + JETS_REQUEST_TIME * 60000; // set the time increment starting now
-        digitalWrite(JETS_PUMP_PIN,HIGH); // turn on the jets
-      }
+      jetRequestDebounce = time; // lock out the control so we don't turn them back on right away
+    } else if (time - jetRequestAccepted > JETS_REQUEST_DEBOUNCE_TIME) { // if we haven't added time recently
+      jetRequestAccepted = time; // okay we're doing it now
+      if (time > jetsOffTime) jetsOffTime = time; // if jets were off, initialize jetsOffTime
+      jetsOffTime += JETS_REQUEST_TIME * 60000; // add the time increment
+      if (jetsOffTime - time > (JETS_TIME_MAX * 60000)) jetsOffTime = time + (JETS_TIME_MAX * 60000); // constrain
+      digitalWrite(JETS_PUMP_PIN,HIGH); // turn on the jets in case they're not already on
     }
   }
 }
