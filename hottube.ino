@@ -119,11 +119,15 @@ void sendResponse(EthernetClient* client) {
     client->println("GET /j/off");
     client->println("  Turn the jets on for MINUTES or off.\n");
  
-    client->println("GET /sensors.json");
-    client->println("  All the sensor data as json\n");
+    client->println("GET /sensors[.json]");
+    client->println("  All the sensor data [as json]\n");
   }
-  else if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
-    client->println("Content-Type: application/json\n");
+  else if (strncmp("GET /sensors", (char*)buffer, 12) == 0) {
+    if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
+      client->println("Content-Type: application/json\n");
+    } else {
+      client->println("Content-Type: text/plain\n");
+    }
     client->println("{");
     
     client->print("  \"heat\": ");
