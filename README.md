@@ -20,6 +20,8 @@ output temperature to an analog temperature gauge (from the exploratorium) using
 
 also controls hot tub jets with a button or pullstring, short pull to add time, long pull to cancel.
 
+the following instructions are ONLY necessary if you don't want to use the ordinary Arduino IDE to flash the program onto your arduino!!!!!!!!!!!!
+
 # installing the toolchain
 
 First install the standard avr toolchain:
