@@ -6,6 +6,8 @@
 #include "DS18S20.h" // reads temperature from the one digital temp sensor
 #include "button.h" // what does this do?
 
+#define DEBUG
+
 IPAddress ip(192,168,1,75);
 static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 #define SERVER_PORT 80 // what port is our web server on
