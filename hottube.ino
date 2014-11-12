@@ -17,7 +17,6 @@ EthernetServer server(SERVER_PORT);
 
 #define JETS_PUMP_PIN 8 // to turn on jet blaster pump
 #define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
-#define PUMPSTAYON 30000 // how long to run pump after heater is turned off
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
@@ -32,11 +31,9 @@ char buffer[BUFFER_SIZE];
 int bidx = 0;
 
 float set_celsius = 20; // 40.5555555C = 105F
-float beerctl_temp = 0; // what temp to set the heater to
 float celsiusReading = 0; // stores valid value read from temp sensor
-unsigned long updateMeter, pumpTime, jetsOffTime, lastTempReading = 0;
+unsigned long updateMeter, jetsOffTime, lastTempReading = 0;
 unsigned long time = 0;
-#include "beerctl.h" // controls the heater, must come after time
 
 void setMeter(float celsius) { // set analog temperature meter
   // PWM of 24 = 0 celsius
@@ -67,7 +64,6 @@ void setup() {
     setMeter(getTemp());
   }
   else Serial.println("ERROR: DS18B20 temp sensor NOT found!!!");
-  beerctl_init(); // init the heater and thermistors
 }
 
 void redirectClient(EthernetClient* client) {
@@ -129,13 +125,9 @@ void sendResponse(EthernetClient* client) {
       client->println("Content-Type: text/plain\n");
     }
     client->println("{");
-    
-    client->print("  \"heat\": ");
-    client->println(digitalRead(HEATER_PIN) ? "true," : "false,");
-    
-    client->print("  \"pump\": ");
-    client->print(time - pumpTime);
-    client->println(",");
+
+    client->print("  \"heater_pump\": ");
+    client->println(digitalRead(HEATER_PUMP_PIN) ? "true," : "false,");
 
     client->println("  \"temperature\": {");
     client->print("    \"celsius\": ");
@@ -151,9 +143,6 @@ void sendResponse(EthernetClient* client) {
     client->println(",");
     client->print("    \"fahrenheit\": ");
     client->print(celsiusToFarenheit(set_celsius));
-    client->println(",");
-    client->print("    \"beerctl_temp\": ");
-    client->print(beerctl_temp);
     client->println("\n  },");
 
     client->print("    \"jets\": ");
@@ -163,8 +152,8 @@ void sendResponse(EthernetClient* client) {
   else {
     client->println("Content-Type: text/html\n");
     // print the current readings, in HTML format:
-    if (digitalRead(HEATER_PIN)) {
-      client->println("Heater is on!");
+    if (digitalRead(HEATER_PUMP_PIN)) {
+      client->println("Heater pump is on!");
       client->println();
     }
     client->print("Temperature: ");
@@ -264,17 +253,11 @@ void loop() {
 #endif
     updateMeter = time;
     if (celsiusReading + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
-      beerctl_temp = celsiusToFarenheit(BEERCTL_MAX);
       digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
     } else if (celsiusReading > set_celsius) { // if we reach our goal, turn off heater
-      if (beerctl_temp != 0) pumpTime = time; // if heater WAS on, we will wait a minute
-      beerctl_temp = 0;
-      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
-    } else if (beerctl_temp == 0) {
-      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
+      digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump
     }
   }
-  beerctl_loop(beerctl_temp); // whatever that temp may be
 #ifndef DEBUG
   listenForEthernetClients();
   updateJets();
