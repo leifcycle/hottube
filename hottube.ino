@@ -17,6 +17,7 @@ EthernetServer server(SERVER_PORT);
 
 #define JETS_PUMP_PIN 8 // to turn on jet blaster pump
 #define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
+#define PUMPMINTIME 60000 // minimum time to run heater pump
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
@@ -32,7 +33,7 @@ int bidx = 0;
 
 float set_celsius = 20; // 40.5555555C = 105F
 float celsiusReading = 0; // stores valid value read from temp sensor
-unsigned long updateMeter, jetsOffTime, lastTempReading = 0;
+unsigned long updateMeter, pumpTime, jetsOffTime, lastTempReading = 0;
 unsigned long time = 0;
 
 void setMeter(float celsius) { // set analog temperature meter
@@ -253,8 +254,10 @@ void loop() {
 #endif
     updateMeter = time;
     if (celsiusReading + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
+      if (!digitalRead(HEATER_PUMP_PIN)) pumpTime = time; // remember when we last turned on
       digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
-    } else if (celsiusReading > set_celsius) { // if we reach our goal, turn off heater
+    }
+    if ((celsiusReading > set_celsius) && (time - pumpTime > PUMPMINTIME)) { // if we reach our goal, turn off heater
       digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump
     }
   }
