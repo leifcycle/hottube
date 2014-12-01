@@ -15,8 +15,8 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(SERVER_PORT);
 
-#define JETS_PUMP_PIN 8 // to turn on jet blaster pump
-#define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
+#define JETS_PUMP_PIN 7 // to turn on jet blaster pump
+#define HEATER_PUMP_PIN 8 // to turn on heater circulator pump
 #define PUMPMINTIME 60000 // minimum time to run heater pump
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
