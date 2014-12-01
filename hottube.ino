@@ -70,6 +70,7 @@ void setup() {
 void redirectClient(EthernetClient* client) {
     client->println("HTTP/1.1 302");
     client->println("Pragma: no-cache");
+    client->println("Access-Control-Allow-Origin: *");
     client->println("Location: /");
 }
 
