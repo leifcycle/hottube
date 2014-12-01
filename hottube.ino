@@ -103,6 +103,7 @@ void sendResponse(EthernetClient* client) {
 
   client->println("HTTP/1.1 200 OK");
   client->println("Pragma: no-cache");
+  client->println("Access-Control-Allow-Origin: *");
   float celsius = getTemp(); // query the DS18B20 temp sensor
 
   if (strncmp("GET /help", (char*)buffer, 9) == 0) {
@@ -122,7 +123,6 @@ void sendResponse(EthernetClient* client) {
   }
   else if (strncmp("GET /sensors", (char*)buffer, 12) == 0) {
     if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
-      client->println("Access-Control-Allow-Origin: *");
       client->println("Content-Type: application/json\n");
     } else {
       client->println("Content-Type: text/plain\n");
