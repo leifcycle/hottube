@@ -27,11 +27,11 @@ EthernetServer server(SERVER_PORT);
 #define TEMP_VALID_MIN 10 // minimum celsius reading from temp sensor considered valid
 #define TEMP_VALID_MAX 120 // maximum celsius reading from temp sensor considered valid
 #define MAXREADINGAGE 60000 // maximum time since last valid reading to continue to use it
-#define BUFFER_SIZE 512 // 1024 was too big, it turns out
+#define BUFFER_SIZE 256 // 1024 was too big, it turns out, as was 512 after CORS
 char buffer[BUFFER_SIZE];
 int bidx = 0;
 
-float set_celsius = 20; // 40.5555555C = 105F
+float set_celsius = 5; // 40.5555555C = 105F
 float celsiusReading = 0; // stores valid value read from temp sensor
 unsigned long updateMeter, pumpTime, jetsOffTime, lastTempReading = 0;
 unsigned long time = 0;
