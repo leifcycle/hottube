@@ -121,6 +121,7 @@ void sendResponse(EthernetClient* client) {
   }
   else if (strncmp("GET /sensors", (char*)buffer, 12) == 0) {
     if (strncmp("GET /sensors.json", (char*)buffer, 17) == 0) {
+      client->println("Access-Control-Allow-Origin: *");
       client->println("Content-Type: application/json\n");
     } else {
       client->println("Content-Type: text/plain\n");
