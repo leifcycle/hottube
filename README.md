@@ -7,7 +7,9 @@ Using X-Board V2.0 (SKU:DFR0162) with Ethernet:WIZ5100 and Arduino UNO Bootloade
 
 http://www.dfrobot.com/wiki/index.php/X-Board_V2_(SKU:DFR0162)
 
-controlling a 3800 watt electric heater through a solid-state relay, and an electric water pump through a different solid state relay (can't share, one's 240v the other is 120v)
+branch "master" is for use with an external water heater that is triggered by water flow from the pump.
+
+branch "lectric" is for controlling an electric heater through a solid-state relay, and an electric water pump through a different solid state relay (even if they can't share, if one's 240v the other is 120v)
 
 reading temperature using a Waterproof DS18B20 Digital temperature sensor (there are also thermistors before and after the electric heating element)
 
@@ -20,7 +22,7 @@ output temperature to an analog temperature gauge (from the exploratorium) using
 
 also controls hot tub jets with a button or pullstring, short pull to add time, long pull to cancel.
 
-the following instructions are ONLY necessary if you don't want to use the ordinary Arduino IDE to flash the program onto your arduino!!!!!!!!!!!!
+# the following instructions are ONLY necessary if you don't want to use the ordinary Arduino IDE to flash the program onto your arduino!!!!!!!!!!!!
 
 # installing the toolchain
 

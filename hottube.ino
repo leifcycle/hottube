@@ -17,28 +17,26 @@ static byte mac[] = { 0xDE,0xAD,0x69,0x2D,0x30,0x32 };
 // (port 80 is default for HTTP):
 EthernetServer server(SERVER_PORT);
 
-#define JETS_PUMP_PIN 8 // to turn on jet blaster pump
-#define HEATER_PUMP_PIN 7 // to turn on heater circulator pump
-#define PUMPSTAYON 30000 // how long to run pump after heater is turned off
+#define JETS_PUMP_PIN 7 // to turn on jet blaster pump
+#define HEATER_PUMP_PIN 8 // to turn on heater circulator pump
+#define PUMPMINTIME 60000 // minimum time to run heater pump
 #define HYSTERESIS 0.5 // how many degrees lower then set_celsius before turning heater on
 #define METER_PIN 9 // analog meter connected to this pin
 #define METER_TIME 1000 // how long to wait before updating meter in loop()
-#define JETS_TIME_MAX 60 // maximum jets time in minutes
+#define JETS_TIME_MAX 240 // maximum jets time in minutes
 #define JETS_REQUEST_PIN A5 // short this pin to ground to turn jets on or off
 #define JETS_REQUEST_TIME 5 // minutes of jets requested
 #define TEMP_VALID_MIN 10 // minimum celsius reading from temp sensor considered valid
 #define TEMP_VALID_MAX 120 // maximum celsius reading from temp sensor considered valid
 #define MAXREADINGAGE 60000 // maximum time since last valid reading to continue to use it
-#define BUFFER_SIZE 512 // 1024 was too big, it turns out
+#define BUFFER_SIZE 256 // 1024 was too big, it turns out, as was 512 after CORS
 char buffer[BUFFER_SIZE];
 int bidx = 0;
 
-float set_celsius = 20; // 40.5555555C = 105F
-float beerctl_temp = 0; // what temp to set the heater to
+float set_celsius = 5; // 40.5555555C = 105F
 float celsiusReading = 0; // stores valid value read from temp sensor
 unsigned long updateMeter, pumpTime, jetsOffTime, lastTempReading = 0;
 unsigned long time = 0;
-#include "beerctl.h" // controls the heater, must come after time
 
 void setMeter(float celsius) { // set analog temperature meter
   // PWM of 24 = 0 celsius
@@ -69,12 +67,12 @@ void setup() {
     setMeter(getTemp());
   }
   else Serial.println("ERROR: DS18B20 temp sensor NOT found!!!");
-  beerctl_init(); // init the heater and thermistors
 }
 
 void redirectClient(EthernetClient* client) {
     client->println("HTTP/1.1 302");
     client->println("Pragma: no-cache");
+    client->println("Access-Control-Allow-Origin: *");
     client->println("Location: /");
 }
 
@@ -107,6 +105,7 @@ void sendResponse(EthernetClient* client) {
 
   client->println("HTTP/1.1 200 OK");
   client->println("Pragma: no-cache");
+  client->println("Access-Control-Allow-Origin: *");
   float celsius = getTemp(); // query the DS18B20 temp sensor
 
   if (strncmp("GET /help", (char*)buffer, 9) == 0) {
@@ -131,13 +130,9 @@ void sendResponse(EthernetClient* client) {
       client->println("Content-Type: text/plain\n");
     }
     client->println("{");
-    
-    client->print("  \"heat\": ");
-    client->println(digitalRead(HEATER_PIN) ? "true," : "false,");
-    
-    client->print("  \"pump\": ");
-    client->print(time - pumpTime);
-    client->println(",");
+
+    client->print("  \"heater_pump\": ");
+    client->println(digitalRead(HEATER_PUMP_PIN) ? "true," : "false,");
 
     client->println("  \"temperature\": {");
     client->print("    \"celsius\": ");
@@ -153,9 +148,6 @@ void sendResponse(EthernetClient* client) {
     client->println(",");
     client->print("    \"fahrenheit\": ");
     client->print(celsiusToFarenheit(set_celsius));
-    client->println(",");
-    client->print("    \"beerctl_temp\": ");
-    client->print(beerctl_temp);
     client->println("\n  },");
 
     client->print("    \"jets\": ");
@@ -165,8 +157,8 @@ void sendResponse(EthernetClient* client) {
   else {
     client->println("Content-Type: text/html\n");
     // print the current readings, in HTML format:
-    if (digitalRead(HEATER_PIN)) {
-      client->println("Heater is on!");
+    if (digitalRead(HEATER_PUMP_PIN)) {
+      client->println("Heater pump is on!");
       client->println();
     }
     client->print("Temperature: ");
@@ -223,9 +215,8 @@ void listenForEthernetClients() {
 }
 
 unsigned long jetRequestDebounce = 0; // last time jets request pin was high
-unsigned long jetRequestAccepted = 0; // time when jet increase request was last done
 #define JETS_REQUEST_DEBOUNCE_TIME 900 // time in milliseconds to debounce pin
-#define JETS_REQUEST_CANCEL_TIME 2000 // time in milliseconds to cancel jets altogether
+#define JETS_REQUEST_CANCEL_TIME 1500 // time in milliseconds to cancel jets altogether
 
 // this routine is seriously influenced by the main loop waiting 850ms for each
 // call to read the DS18S20 temperature sensor.  This will change when DS18S20.h
@@ -239,13 +230,14 @@ void updateJets() {
     if (time - jetRequestDebounce > JETS_REQUEST_CANCEL_TIME) { // holding button down cancels jets
       jetsOffTime = time; // cancel jets
       digitalWrite(JETS_PUMP_PIN,LOW); // turn OFF the jets
-      jetRequestDebounce = time; // lock out the control so we don't turn them back on right away
-    } else if (time - jetRequestAccepted > JETS_REQUEST_DEBOUNCE_TIME) { // if we haven't added time recently
-      jetRequestAccepted = time; // okay we're doing it now
-      if (time > jetsOffTime) jetsOffTime = time; // if jets were off, initialize jetsOffTime
-      jetsOffTime += JETS_REQUEST_TIME * 60000; // add the time increment
-      if (jetsOffTime - time > (JETS_TIME_MAX * 60000)) jetsOffTime = time + (JETS_TIME_MAX * 60000); // constrain
-      digitalWrite(JETS_PUMP_PIN,HIGH); // turn on the jets in case they're not already on
+    } else { // just trying to increment jet time
+      if (digitalRead(JETS_PUMP_PIN)) { // if pump is already on
+        jetsOffTime += JETS_REQUEST_TIME * 60000; // add the time increment
+        if (jetsOffTime - time > (JETS_TIME_MAX * 60000)) jetsOffTime = time + (JETS_TIME_MAX * 60000); // constrain
+      } else {
+        jetsOffTime = time + JETS_REQUEST_TIME * 60000; // set the time increment starting now
+        digitalWrite(JETS_PUMP_PIN,HIGH); // turn on the jets
+      }
     }
   }
 }
@@ -266,17 +258,13 @@ void loop() {
 #endif
     updateMeter = time;
     if (celsiusReading + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
-      beerctl_temp = celsiusToFarenheit(BEERCTL_MAX);
+      if (!digitalRead(HEATER_PUMP_PIN)) pumpTime = time; // remember when we last turned on
       digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
-    } else if (celsiusReading > set_celsius) { // if we reach our goal, turn off heater
-      if (beerctl_temp != 0) pumpTime = time; // if heater WAS on, we will wait a minute
-      beerctl_temp = 0;
-      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
-    } else if (beerctl_temp == 0) {
-      if (time - pumpTime > PUMPSTAYON) digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump if a minute has elapsed since beerctl_temp changed to 0
+    }
+    if ((celsiusReading > set_celsius) && (time - pumpTime > PUMPMINTIME)) { // if we reach our goal, turn off heater
+      digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump
     }
   }
-  beerctl_loop(beerctl_temp); // whatever that temp may be
 #ifndef DEBUG
   listenForEthernetClients();
   updateJets();
