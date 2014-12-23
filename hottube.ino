@@ -51,7 +51,7 @@ void setMeter(float celsius) { // set analog temperature meter
 void setup() {
   pinMode(METER_PIN, OUTPUT); // enable the analog temperature meter
   pinMode(HI_FLOW_PUMP_PIN, OUTPUT);
-  pinMode(HEATER_PUMP_PIN, OUTPUT);
+  pinMode(LO_FLOW_PUMP_PIN, OUTPUT);
   analogWrite(METER_PIN, 20);  // move the needle to about -1 degree C
   Serial.begin(57600);
   Serial.println("\n[backSoon]");
@@ -133,7 +133,7 @@ void sendResponse(EthernetClient* client) {
     client->println("{");
 
     client->print("  \"heater_pump\": ");
-    client->println(digitalRead(HEATER_PUMP_PIN) ? "true," : "false,");
+    client->println(digitalRead(LO_FLOW_PUMP_PIN) ? "true," : "false,");
 
     client->println("  \"temperature\": {");
     client->print("    \"celsius\": ");
@@ -158,8 +158,8 @@ void sendResponse(EthernetClient* client) {
   else {
     client->println("Content-Type: text/html\n");
     // print the current readings, in HTML format:
-    if (digitalRead(HEATER_PUMP_PIN)) {
-      client->println("Heater pump is on!");
+    if (digitalRead(LO_FLOW_PUMP_PIN)) {
+      client->println("low-speed pump is on!");
       client->println();
     }
     client->print("Temperature: ");
@@ -260,11 +260,11 @@ void loop() {
 #endif
     updateMeter = time;
     if (celsiusReading + HYSTERESIS < set_celsius) {  // only turn on heat if HYSTERESIS deg. C colder than target
-      if (!digitalRead(HEATER_PUMP_PIN)) pumpTime = time; // remember when we last turned on
-      digitalWrite(HEATER_PUMP_PIN,HIGH); // turn on pump
+      if (!digitalRead(LO_FLOW_PUMP_PIN)) pumpTime = time; // remember when we last turned on
+      if (!digitalRead(HI_FLOW_PUMP_PIN)) digitalWrite(LO_FLOW_PUMP_PIN,HIGH); // IF HI_PUMP NOT ON turn on lo_pump
     }
     if ((celsiusReading > set_celsius) && (time - pumpTime > PUMPMINTIME)) { // if we reach our goal, turn off heater
-      digitalWrite(HEATER_PUMP_PIN,LOW); // turn off pump
+      digitalWrite(LO_FLOW_PUMP_PIN,LOW); // turn off lo_pump
     }
   }
 #ifndef DEBUG
